@@ -1,4 +1,4 @@
-package pooh
+package cnxpool
 
 import (
 	"net"
