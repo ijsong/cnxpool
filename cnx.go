@@ -41,7 +41,7 @@ func (c *cnx) watch() {
 		buf := make([]byte, 1)
 		c.SetReadDeadline(time.Now().Add(ReadDeadlineInMillis))
 		defer c.SetReadDeadline(ZeroTime)
-		n, err := c.Read(buf)
+		_, err := c.Read(buf)
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
 				c.cp.promote(c)
