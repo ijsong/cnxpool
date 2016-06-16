@@ -38,17 +38,15 @@ func (c *cnx) close() error {
 
 func (c *cnx) watch() {
 	go func(c *cnx) {
-		buf := []byte{}
+		buf := make([]byte, 1)
 		c.SetReadDeadline(time.Now().Add(ReadDeadlineInMillis))
 		defer c.SetReadDeadline(ZeroTime)
-		_, err := c.Read(buf)
+		n, err := c.Read(buf)
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
-				log.Println("cnx: got timeout")
 				c.cp.promote(c)
 				return
 			}
-			log.Println("cnx: got error:", err)
 			c.close()
 		}
 	}(c)

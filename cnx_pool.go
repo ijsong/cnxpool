@@ -64,11 +64,8 @@ func (cp *CnxPool) get() (net.Conn, error) {
 func (cp *CnxPool) release(conn *cnx) error {
 	select {
 	case cp.rq <- conn:
-		log.Println("release into rq:", conn)
 		return nil
 	default:
-		log.Println("release close:", conn)
-		log.Println("rq:", cp.rq)
 		return conn.close()
 	}
 }
@@ -79,7 +76,6 @@ func (cp *CnxPool) watchdog() {
 		for {
 			select {
 			case <-cp.watchdogTicker.C:
-				log.Println("watchdog")
 				cp.demote()
 			}
 		}
@@ -89,7 +85,6 @@ func (cp *CnxPool) watchdog() {
 func (cp *CnxPool) demote() {
 	select {
 	case conn := <-cp.rq:
-		log.Println("demote:", conn)
 		conn.watch()
 	}
 }
@@ -97,9 +92,7 @@ func (cp *CnxPool) demote() {
 func (cp *CnxPool) promote(conn *cnx) {
 	select {
 	case cp.rq <- conn:
-		log.Println("promote:", conn)
 	default:
-		log.Println("promote-close:", conn)
 		conn.close()
 	}
 }
