@@ -1,8 +1,7 @@
-CnxPool
+cnxpool
 
-What is this?
-Socket connection pool
-Handle closing connection silently
+- Socket connection pool
+- Handle closing connection silently
 
 
 
