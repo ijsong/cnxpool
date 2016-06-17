@@ -36,7 +36,7 @@ func (c *cnx) close() error {
 	return c.Conn.Close()
 }
 
-func (c *cnx) watch() {
+func (c *cnx) watch(onSuccess func(conn *cnx), onFailure func(conn *cnx)) {
 	go func(c *cnx) {
 		buf := make([]byte, 1)
 		c.SetReadDeadline(time.Now().Add(ReadDeadlineInMillis))
@@ -44,10 +44,12 @@ func (c *cnx) watch() {
 		_, err := c.Read(buf)
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
+				onSuccess(c)
 				c.cp.promote(c)
-				return
+			} else {
+				onFailure(c)
+				c.close()
 			}
-			c.close()
 		}
 	}(c)
 

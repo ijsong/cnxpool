@@ -49,50 +49,68 @@ func (cp *CnxPool) Close() {
 }
 
 func (cp *CnxPool) get() (net.Conn, error) {
-	select {
-	case conn := <-cp.rq:
+	if conn := cp.demote(); conn != nil {
 		return conn, nil
-	default:
-		conn, err := cp.connect()
-		if err != nil {
-			return nil, err
-		}
-		return newCnx(conn, cp), nil
 	}
+
+	conn, err := cp.connect()
+	if err != nil {
+		return nil, err
+	}
+
+	return newCnx(conn, cp), nil
 }
 
 func (cp *CnxPool) release(conn *cnx) error {
-	select {
-	case cp.rq <- conn:
-		return nil
-	default:
-		return conn.close()
+	onSuccess := func(conn *cnx) {
+		conn.cp.promote(conn)
 	}
+
+	onFailure := func(conn *cnx) {
+		conn.close()
+	}
+
+	conn.watch(onSuccess, onFailure)
+	return nil
 }
 
 func (cp *CnxPool) watchdog() {
+	onSuccess := func(conn *cnx) {
+		conn.cp.promote(conn)
+	}
+
+	onFailure := func(conn *cnx) {
+		conn.close()
+	}
+
 	cp.watchdogTicker = time.NewTicker(WatchdogTick)
+
 	go func(cp *CnxPool) {
 		for {
 			select {
 			case <-cp.watchdogTicker.C:
-				cp.demote()
+				if conn := cp.demote(); conn != nil {
+					conn.watch(onSuccess, onFailure)
+				}
 			}
 		}
 	}(cp)
 }
 
-func (cp *CnxPool) demote() {
+func (cp *CnxPool) demote() *cnx {
 	select {
 	case conn := <-cp.rq:
-		conn.watch()
+		return conn
+	default:
+		return nil
 	}
 }
 
-func (cp *CnxPool) promote(conn *cnx) {
+func (cp *CnxPool) promote(conn *cnx) error {
 	select {
 	case cp.rq <- conn:
+		return nil
 	default:
-		conn.close()
+		return conn.close()
 	}
 }
