@@ -1,7 +1,6 @@
 package cnxpool
 
 import (
-	"fmt"
 	"net"
 	"time"
 	"errors"
@@ -17,28 +16,28 @@ type CnxPool struct {
 var DefaultCnxPoolCapacity = 32
 var WatchdogTick = 10 * time.Millisecond
 
-func NewCnxPool(network, address string, capacity int) (*CnxPool, error) {
+func NewCnxPool(connect func() (net.Conn, error), capacity int) (*CnxPool, error) {
 	if capacity <= 0 {
 		return nil, errors.New("Argument 'capacity' should be positive number.")
 	}
 
 	cp := &CnxPool{
 		rq: make(chan *cnx, capacity),
-		connect: func() (net.Conn, error) { return net.Dial(network, address) },
+		connect: connect,
 		capacity: capacity,
 	}
 
 	for i := 0; i < capacity; i++ {
 		conn, err := cp.connect()
 		if err != nil {
-			return nil, errors.New(fmt.Sprintf("CnxPool can't connect %s by %s.", address, network))
+			return nil, errors.New("CnxPool can't use connect function")
 		}
 		cp.rq <- newCnx(conn, cp)
 	}
 
 	cp.watchdog()
 
-	return cp
+	return cp, nil
 }
 
 func (cp *CnxPool) Get() (net.Conn, error) {
