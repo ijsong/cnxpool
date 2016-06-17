@@ -45,10 +45,8 @@ func (c *cnx) watch(onSuccess func(conn *cnx), onFailure func(conn *cnx)) {
 		if err != nil {
 			if err, ok := err.(net.Error); ok && err.Timeout() {
 				onSuccess(c)
-				c.cp.promote(c)
 			} else {
 				onFailure(c)
-				c.close()
 			}
 		}
 	}(c)
