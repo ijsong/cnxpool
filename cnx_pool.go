@@ -1,3 +1,4 @@
+// Package cnxpool provides connection pool which handles connection failure silently.
 package cnxpool
 
 import (
@@ -6,6 +7,7 @@ import (
 	"errors"
 )
 
+// Connection Pool type.
 type CnxPool struct {
 	rq chan *cnx
 	connect func() (net.Conn, error)
@@ -13,9 +15,17 @@ type CnxPool struct {
 	watchdogTicker *time.Ticker
 }
 
-var DefaultCnxPoolCapacity = 32
-var WatchdogTick = 10 * time.Millisecond
+const (
+	defaultCnxPoolCapacity = 32 // default the number of connections in pool
+	watchdogTick = 10 * time.Millisecond // watchdog interval
+)
 
+// NewCnxPool creates connection pool.
+// First argument 'connect' is a function which makes connection.
+// See https://golang.org/pkg/net/#Dial.
+// Argument 'capacity' is the number of connections in pool.
+// Initially, created connection pool has 'capacity' connections.
+// When connection is not enough in pool, it generates new connection by using function 'connect'.
 func NewCnxPool(connect func() (net.Conn, error), capacity int) (*CnxPool, error) {
 	if capacity <= 0 {
 		return nil, errors.New("Argument 'capacity' should be positive number.")
@@ -40,10 +50,13 @@ func NewCnxPool(connect func() (net.Conn, error), capacity int) (*CnxPool, error
 	return cp, nil
 }
 
+// Get returns connection which is compatible with net.Conn.
+// See https://golang.org/pkg/net/#Conn.
 func (cp *CnxPool) Get() (net.Conn, error) {
 	return cp.get()
 }
 
+// Close destroys connection pool.
 func (cp *CnxPool) Close() {
 	cp.watchdogTicker.Stop()
 	close(cp.rq)
@@ -87,7 +100,7 @@ func (cp *CnxPool) watchdog() {
 		conn.close()
 	}
 
-	cp.watchdogTicker = time.NewTicker(WatchdogTick)
+	cp.watchdogTicker = time.NewTicker(watchdogTick)
 
 	go func(cp *CnxPool) {
 		for {
