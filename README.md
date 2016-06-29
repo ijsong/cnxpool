@@ -14,7 +14,7 @@ import (
 
 ```go
 // Create connection pool
-pool, err := NewCnxPool(func () (net.Conn, error) {
+pool, err := cnxpool.NewCnxPool(func () (net.Conn, error) {
 }, 32)
 if err != nil {
   // handle error
