@@ -1,5 +1,4 @@
-# cnxpool
-[![Build Status](https://travis-ci.org/xsdb/cnxpool.svg?branch=master)](https://travis-ci.org/xsdb/cnxpool)
+# cnxpool [![Build Status](https://travis-ci.org/xsdb/cnxpool.svg?branch=master)](https://travis-ci.org/xsdb/cnxpool) [![GoDoc](https://godoc.org/github.com/xsdb/cnxpool?status.svg)](https://godoc.org/github.com/xsdb/cnxpool)
 
 - Socket connection pool
 - Handle closing connection silently
